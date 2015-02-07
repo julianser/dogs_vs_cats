@@ -1,0 +1,94 @@
+!obj:pylearn2.train.Train {
+    dataset: &train !obj:ift6266h15.code.pylearn2.datasets.variable_image_dataset.DogsVsCats {
+        transformer: &transformer !obj:ift6266h15.code.pylearn2.datasets.variable_image_dataset.RandomCrop {
+        scaled_size: 256,
+        crop_size: 221,
+        },
+    },
+    model: !obj:pylearn2.models.mlp.MLP {
+        batch_size: 10,
+        input_space: !obj:pylearn2.space.Conv2DSpace {
+            shape: [221, 221],
+            num_channels: 3
+        },
+        layers: [ !obj:pylearn2.models.mlp.ConvRectifiedLinear {
+                     layer_name: 'h2',
+                     output_channels: 32,
+                     irange: .05,
+                     kernel_shape: [5, 5],
+                     pool_shape: [3, 3],
+                     pool_stride: [2, 2],
+                     max_kernel_norm: 1.9365
+                 }, !obj:pylearn2.models.mlp.ConvRectifiedLinear {
+                     layer_name: 'h3',
+                     output_channels: 32,
+                     irange: .05,
+                     kernel_shape: [5, 5],
+                     pool_shape: [3, 3],
+                     pool_stride: [2, 2],
+                     max_kernel_norm: 1.9365
+                 }, !obj:pylearn2.models.mlp.ConvRectifiedLinear {
+                     layer_name: 'h4',
+                     output_channels: 64,
+                     irange: .05,
+                     kernel_shape: [5, 5],
+                     pool_shape: [3, 3],
+                     pool_stride: [2, 2],
+                     max_kernel_norm: 1.9365
+                 }, !obj:pylearn2.models.mlp.Softmax {
+                     max_col_norm: 1.9365,
+                     layer_name: 'y',
+                     n_classes: 2,
+                     istdev: .05
+                 }
+                ],
+    },
+    algorithm: !obj:pylearn2.training_algorithms.sgd.SGD {
+        batch_size: &batch_size 10,
+        train_iteration_mode: 'batchwise_shuffled_sequential',
+        batches_per_iter: 100,
+        monitoring_batch_size: *batch_size,
+        monitoring_batches: 248,
+        monitor_iteration_mode: 'even_batchwise_shuffled_sequential',
+        learning_rate: 0.0001,
+        learning_rule: !obj:pylearn2.training_algorithms.learning_rule.Momentum {
+            init_momentum: .5
+        },
+        monitoring_dataset: {
+            'train' : *train,
+            'valid': !obj:ift6266h15.code.pylearn2.datasets.variable_image_dataset.DogsVsCats {
+                transformer: *transformer,
+                start: 20000,
+                stop: 22499,
+            },
+            'test': !obj:ift6266h15.code.pylearn2.datasets.variable_image_dataset.DogsVsCats {
+                transformer: *transformer,
+                start: 22500,
+                stop: 25000,
+            },
+        },
+        cost: !obj:pylearn2.costs.mlp.dropout.Dropout {
+            input_include_probs: { 'h2' : 1.0, 'h3' : 1.0  },
+            input_scales: { 'h2' : 1.0, 'h3' : 1.0 }
+        },
+        termination_criterion: !obj:pylearn2.termination_criteria.And {
+            criteria: [
+                !obj:pylearn2.termination_criteria.EpochCounter {
+                    max_epochs: 500
+                },
+            ]
+        },
+    },
+    extensions:
+        [ !obj:pylearn2.train_extensions.best_params.MonitorBasedSaveBest {
+             channel_name: 'valid_y_misclass',
+             save_path: "convolutional_network_best.pkl"
+        }, !obj:pylearn2.training_algorithms.learning_rule.MomentumAdjustor {
+            start: 1,
+            saturate: 10,
+            final_momentum: .99
+        }
+    ],
+    save_path: "convolutional_network.pkl",
+    save_freq: 1,
+}
