@@ -145,7 +145,7 @@ class RLAgent():
                 features = np.zeros((self.n_features,1))
                 features[0] = 1
 
-                action = np.ones((1,1))*4
+                action = np.ones((1,1))*9
                 reward = np.ones((1,1))*0.1
                 for i in range(0, 100):
                    self.make_action(features, action, reward, features)
@@ -407,7 +407,7 @@ def train(useRLAgent, initialLearningRate, dataset_train, dataset_valid, dataset
     
     previous_features = np.zeros((agent.n_features,1))
     features = np.zeros((1,1))
-    previous_action = np.zeros((1,1))
+    previous_action = np.ones((1,1)) * agent.n_actions - 1 # Always start off agent from the lowest learning rate (i.e. last action)
     action = 0
     previous_reward = np.zeros((1,1))
     reward = 0
@@ -521,22 +521,22 @@ def train(useRLAgent, initialLearningRate, dataset_train, dataset_valid, dataset
 	      
 	      action = agent.make_action(previous_features, previous_action, reward, features)
 	      
-	      if action == 5: # Revert parameters to previous state
-		  print 'Agent: Resetting parameters to previous state...'
-		  layer0.W.set_value(previous_model[0])
-		  layer0.b.set_value(previous_model[1])
-		  layer1.W.set_value(previous_model[2])
-		  layer1.b.set_value(previous_model[3])
-		  layer2.W.set_value(previous_model[4])
-		  layer2.b.set_value(previous_model[5])
-		  layer3.W.set_value(previous_model[6])
-		  layer3.b.set_value(previous_model[7])
-
-		  previous_features = features
-		  features[0] = 0
-		  action = agent.make_action(features, action + np.zeros((1,1)), -reward, features)
-	      else:
-		  print 'Agent: No parameters reset.'
+	      #if action == 5: # Revert parameters to previous state
+	      #	  print 'Agent: Resetting parameters to previous state...'
+	      #	  layer0.W.set_value(previous_model[0])
+	      #	  layer0.b.set_value(previous_model[1])
+	      #	  layer1.W.set_value(previous_model[2])
+	      #	  layer1.b.set_value(previous_model[3])
+	      #	  layer2.W.set_value(previous_model[4])
+	      #	  layer2.b.set_value(previous_model[5])
+	      #	  layer3.W.set_value(previous_model[6])
+	      #	  layer3.b.set_value(previous_model[7])
+              #
+	      #	  previous_features = features
+	      #	  features[0] = 0
+	      #	  action = agent.make_action(features, action + np.zeros((1,1)), -reward, features)
+	      #else:
+              #     print 'Agent: No parameters reset.'
 
 
       
