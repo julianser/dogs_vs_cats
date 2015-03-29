@@ -8,11 +8,13 @@ import time
 
 import theano
 import theano.tensor as T
+
 from theano.tensor.signal import downsample
 from theano.tensor.nnet import conv
 
 from logreg import LogisticRegression
 from mlp import HiddenLayer
+from theano import shared
 
 import argparse
 
@@ -128,7 +130,7 @@ class RandomCrop():
 class RLAgent():
 
   def __init__(self):
-		self.n_actions = 6
+		self.n_actions = 10
 		self.n_features = 5
 
 		self.theta = np.zeros((self.n_features*self.n_actions))
@@ -139,6 +141,15 @@ class RLAgent():
                 self.reward_history = np.zeros((1, 1))
 
                 #self.matrix_to_invert_history = np.zeros((self.n_features*self.n_actions, self.n_features*self.n_actions))
+                # Simulate prior on lowest learning rate
+                features = np.zeros((self.n_features,1))
+                features[0] = 1
+
+                action = np.ones((1,1))*4
+                reward = np.ones((1,1))*0.1
+                for i in range(0, 100):
+                   self.make_action(features, action, reward, features)
+
 
 
   def make_action(self, features_p, action_p, reward, features):
@@ -177,28 +188,37 @@ class RLAgent():
 
         self.theta = np.linalg.pinv(np.asmatrix(matrix_to_invert))*np.asmatrix(vector_to_multiply)
         print 'Agent: theta', self.theta        
-        
+
+        previous_action = action_p[0]
+
         best_v = - np.inf
-        best_a = 0
+        best_a = previous_action
         for a in range(self.n_actions):
-           v = np.dot(features.T, self.theta[a*self.n_features:(a+1)*self.n_features])
-           if v > best_v:
-              best_v = v
-              best_a = a
+           if a >= previous_action - 1 and a <= previous_action + 1:
+              v = np.dot(features.T, self.theta[a*self.n_features:(a+1)*self.n_features])
+              if v > best_v:
+                 best_v = v
+                 best_a = a
+
+
+        #best_v = - np.inf
+        #best_a = 0
+        #for a in range(self.n_actions):
+        #   v = np.dot(features.T, self.theta[a*self.n_features:(a+1)*self.n_features])
+        #   if v > best_v:
+        #      best_v = v
+        #      best_a = a
 
         ran = np.random.uniform(0,1)
         if ran < self.exploration_prob: # Choose random action
-           ran_two = np.random.uniform(0,1)
-           if ran_two < 1/self.n_actions: # With probability 1/number of actions, choose to reset weights (i.e. the last action)
-	      best_a = self.n_actions - 1
-	   elif best_a < self.n_actions - 1: # Otherwise, with probability choose action above or below current action
-	      ran_three = np.random.uniform(0,1)
-	      if ran_three > 0.5:
-		 best_a = best_a + 1
-	      else:
-		 best_a = best_a - 1
+            best_a = previous_action
+	    ran_three = np.random.uniform(0,1)
+	    if ran_three > 0.5:
+	       best_a = best_a + 1
+	    else:
+	       best_a = best_a - 1
 	      
-	      best_a = min(max(best_a, 0), self.n_actions - 2)          
+	    best_a = min(max(best_a, 0), self.n_actions - 2)          
 
         return best_a
 
@@ -251,8 +271,7 @@ def train(useRLAgent, initialLearningRate, dataset_train, dataset_valid, dataset
     y = T.ivector('y')  # the labels are presented as 1D vector of
                         # [int] labels
                         
-    learning_rate = T.scalar()
-    learning_rate = initialLearningRate
+    learning_rate = shared(float(initialLearningRate))
 
     ######################
     # BUILD ACTUAL MODEL #
@@ -490,7 +509,7 @@ def train(useRLAgent, initialLearningRate, dataset_train, dataset_valid, dataset
 	      parameter_norm_diff = parameter_norm_diff + np.linalg.norm(layer2.b.get_value() - previous_model[5])
 	      parameter_norm_diff = parameter_norm_diff + np.linalg.norm(layer3.W.get_value() - previous_model[6])
 	      parameter_norm_diff = parameter_norm_diff + np.linalg.norm(layer3.b.get_value() - previous_model[7])
-	      parameter_norm_diff = parameter_norm_diff / learning_rate
+	      parameter_norm_diff = parameter_norm_diff / learning_rate.get_value()
 	      features[3] = parameter_norm_diff
 	      # relative improvement in training cost
 	      if previous_training_cost > 0:
@@ -518,17 +537,29 @@ def train(useRLAgent, initialLearningRate, dataset_train, dataset_valid, dataset
 		  action = agent.make_action(features, action + np.zeros((1,1)), -reward, features)
 	      else:
 		  print 'Agent: No parameters reset.'
-	      
+
+
+      
 	      if action==0:
-		learning_rate = 0.1
+		learning_rate.set_value(0.03)
 	      elif action==1:
-		learning_rate = 0.01
+		learning_rate.set_value(0.01)
 	      elif action == 2:
-		learning_rate = 0.001
+		learning_rate.set_value(0.003)
 	      elif action == 3:
-		learning_rate = 0.0001
+		learning_rate.set_value(0.001)
 	      elif action == 4:
-		learning_rate = 0.00001
+		learning_rate.set_value(0.0003)
+              if action==5:
+                learning_rate.set_value(0.0001)
+              elif action==6:
+                learning_rate.set_value(0.00003)
+              elif action == 7:
+                learning_rate.set_value(0.00001)
+              elif action == 8:
+                learning_rate.set_value(0.000003)
+              elif action == 9:
+                learning_rate.set_value(0.000001)
 	      
 
 	      #if action == 1: # Increase learning rate
@@ -550,7 +581,7 @@ def train(useRLAgent, initialLearningRate, dataset_train, dataset_valid, dataset
 	      previous_model = [layer0.W.get_value(), layer0.b.get_value(), layer1.W.get_value(), layer1.b.get_value(), layer2.W.get_value(), layer2.b.get_value(), layer3.W.get_value(), layer3.b.get_value()]
  
  
-            print 'learning_rate', learning_rate
+            print 'learning_rate', learning_rate.get_value()
  
 	    # Compute current test error
             current_test_error = 0
