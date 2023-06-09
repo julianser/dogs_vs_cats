@@ -91,6 +91,4 @@ class RandomCropAndRotation(BaseImageTransformer):
         max_j = rotated_image.shape[1] - self.crop_size
         i = self.rng.randint(low=0, high=max_i)
         j = self.rng.randint(low=0, high=max_j)
-        cropped_image = rotated_image[i: i + self.crop_size,
-                                      j: j + self.crop_size, :]
-        return cropped_image
+        return rotated_image[i : i + self.crop_size, j : j + self.crop_size, :]

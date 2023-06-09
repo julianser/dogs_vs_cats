@@ -122,9 +122,7 @@ class RandomCrop():
         max_j = resized_image.shape[1] - self.crop_size
         i = self.rng.randint(low=0, high=max_i)
         j = self.rng.randint(low=0, high=max_j)
-        cropped_image = resized_image[i: i + self.crop_size,
-                                      j: j + self.crop_size, :]
-        return cropped_image
+        return resized_image[i : i + self.crop_size, j : j + self.crop_size, :]
 
 # Least Squares Q-Learning Agent
 class RLAgent():
@@ -616,8 +614,7 @@ def parse_args():
     parser.add_argument("--initial_learning_rate", type=str, default="0.0001", help="The initial learning rate")
     parser.add_argument("--use_rl_agent", type=str, default='1', help="Whether to use LSPI-Q RL Agent to choose between learning rates")
 
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
     
     
 if __name__ == '__main__':
