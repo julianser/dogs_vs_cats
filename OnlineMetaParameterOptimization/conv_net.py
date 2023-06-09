@@ -156,7 +156,7 @@ class LeNetConvPoolLayer(object):
 
             
 def split_data_into_partitions(leftover_set_x, leftover_set_y, new_set_x, new_set_y, divisible_number):
-    """ Function takes two data sets (for respectively x and y pair values), 
+	""" Function takes two data sets (for respectively x and y pair values), 
     and returns two new data sets (for respectively x and y pair values) such 
     that the latter set of x and y pairs have a number of entries divisible
     by divisible_number
@@ -175,17 +175,17 @@ def split_data_into_partitions(leftover_set_x, leftover_set_y, new_set_x, new_se
     
     """
 
-    complete_set_x = numpy.concatenate((leftover_set_x, new_set_x))
-    complete_set_y = numpy.concatenate((leftover_set_y, new_set_y))
+	complete_set_x = numpy.concatenate((leftover_set_x, new_set_x))
+	complete_set_y = numpy.concatenate((leftover_set_y, new_set_y))
 
-    instances = complete_set_x.shape[0]
-    leftover_instances = instances  % divisible_number
-    current_set_x = complete_set_x[0:instances-leftover_instances,:]
-    current_set_y = complete_set_y[0:instances-leftover_instances]
-    leftover_set_x = complete_set_x[instances-leftover_instances:instances,:]
-    leftover_set_y = complete_set_y[instances-leftover_instances:instances]
-  
-    return leftover_set_x, leftover_set_y, current_set_x, current_set_y
+	instances = complete_set_x.shape[0]
+	leftover_instances = instances  % divisible_number
+	current_set_x = complete_set_x[0:instances-leftover_instances,:]
+	current_set_y = complete_set_y[:instances-leftover_instances]
+	leftover_set_x = complete_set_x[instances-leftover_instances:instances,:]
+	leftover_set_y = complete_set_y[instances-leftover_instances:instances]
+
+	return leftover_set_x, leftover_set_y, current_set_x, current_set_y
   
   
 def optimization(learning_rate=1, lambda_decay=0.5, beta_constant=0.5, nkerns=[2, 3], n_hidden=50, n_updates_per_batch=1, n_epochs=10, file_set = range(1, 2)):

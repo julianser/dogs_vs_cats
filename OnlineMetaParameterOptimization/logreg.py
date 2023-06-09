@@ -200,9 +200,8 @@ class LogisticRegression(object):
             raise TypeError('y should have the same shape as self.y_pred',
                 ('y', target.type, 'y_pred', self.y_pred.type))
         # check if y is of the correct datatype
-        if y.dtype.startswith('int'):                           
-            s = T.sum(T.eq(self.y_pred, predicted_class) * T.eq(y, true_class))
-            return s
+        if y.dtype.startswith('int'):                       
+            return T.sum(T.eq(self.y_pred, predicted_class) * T.eq(y, true_class))
         else:
             raise NotImplementedError()
            
